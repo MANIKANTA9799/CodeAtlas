@@ -1,0 +1,135 @@
+# ==========================================
+# 1. Operating System Files
+# ==========================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+
+# Linux
+.fuse_hidden*
+.directory
+.Trash-*
+
+
+# ==========================================
+# 2. Popular Code Editors and IDEs
+# ==========================================
+# Visual Studio Code
+.vscode/
+!.vscode/extensions.json
+
+# IntelliJ IDEA (WebStorm, PyCharm, PhpStorm, etc.)
+.idea/
+*.iws
+
+# Eclipse
+.metadata/
+.classpath
+.project
+.settings/
+
+
+# ==========================================
+# 3. Environment Secrets and Credentials
+# ==========================================
+.env
+.env.local
+.env.*.local
+*.env
+*.pem
+*.key
+*.cert
+*.secret
+credentials.json
+
+
+# ==========================================
+# 4. Heavy Packages and Dependencies
+# ==========================================
+# Node.js
+node_modules/
+jspm_packages/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+env/
+ENV/
+
+# PHP
+vendor/
+
+# Ruby
+.bundle/
+vendor/bundle/
+
+
+# ==========================================
+# 5. Build Artifacts, Logs, and Caches
+# ==========================================
+# Common build outputs
+dist/
+build/
+out/
+target/
+bin/
+obj/
+
+# Logs and Caches
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.eslintcache
+.prettiercache
+.sass-cache/
+.parcel-cache/
+.cache/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environments
+venv/
+env/
+.venv/
+
+# Environment Variables (CRITICAL: Never commit secrets)
+.env
+.env.local
+
+# IDEs and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Qdrant Local Vector DB Storage (Specific to CodeAtlas)
+# We will likely use Qdrant's local disk mode during development
+qdrant_storage/
+qdrant_data/
+
+# Logs and Testing
+logs/
+*.log
+.pytest_cache/
+htmlcov/
+.coverage
+atlas/
+qdrant_storage
