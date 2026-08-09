@@ -1,5 +1,5 @@
 import React from "react";
-
+import { MarkdownBlock } from "./MarkdownBlock";
 export interface SourceItem {
     type: "code" | "commit";
     file_path?: string;
@@ -44,8 +44,8 @@ export const ContextPanel: React.FC<ContextPanelProps> = ({ sources, retrievedCo
                                 <div className="flex items-center justify-between">
                                     <span
                                         className={`text-xs font-mono font-semibold uppercase px-2 py-0.5 rounded ${src.type === "code"
-                                                ? "bg-blue-950 text-blue-400 border border-blue-800"
-                                                : "bg-purple-950 text-purple-400 border border-purple-800"
+                                            ? "bg-blue-950 text-blue-400 border border-blue-800"
+                                            : "bg-purple-950 text-purple-400 border border-purple-800"
                                             }`}
                                     >
                                         {src.type}

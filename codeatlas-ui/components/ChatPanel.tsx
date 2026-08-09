@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { SourceItem } from "./ContextPanel";
+import { MarkdownBlock } from "./MarkdownBlock";
 
 export interface Message {
     id: string;
@@ -87,12 +88,18 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onSourcesUpdate }) => {
                                 }`}
                         >
                             <div
-                                className={`max-w-2xl px-4 py-3 rounded-xl text-sm whitespace-pre-wrap leading-relaxed ${msg.sender === "user"
-                                    ? "bg-blue-600 text-white rounded-br-none"
-                                    : "bg-gray-900 border border-gray-800 text-gray-200 rounded-bl-none"
+                                className={`max-w-3xl px-5 py-4 rounded-xl shadow-sm ${msg.sender === "user"
+                                        ? "bg-blue-600 text-white rounded-br-none"
+                                        : "bg-gray-900 border border-gray-800 text-gray-200 rounded-bl-none"
                                     }`}
                             >
-                                {msg.content}
+                                {msg.sender === "user" ? (
+                                    <div className="text-sm whitespace-pre-wrap leading-relaxed">
+                                        {msg.content}
+                                    </div>
+                                ) : (
+                                    <MarkdownBlock content={msg.content} />
+                                )}
                             </div>
                         </div>
                     ))
