@@ -27,41 +27,89 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onSourcesUpdate }) => {
             content: input,
         };
 
-        setMessages((prev) => [...prev, userMessage]);
+        // Create a placeholder assistant message that we will append tokens to
+        const assistantId = (Date.now() + 1).toString();
+        const initialAssistantMessage: Message = {
+            id: assistantId,
+            sender: "assistant",
+            content: "",
+            sources: [],
+        };
+
+        setMessages((prev) => [...prev, userMessage, initialAssistantMessage]);
         setInput("");
         setLoading(true);
 
         try {
-            const response = await fetch("http://127.0.0.1:8000/api/v1/chat/", {
+            // Notice we are hitting a new /stream endpoint
+            const response = await fetch("http://127.0.0.1:8000/api/v1/chat/stream", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ query: userMessage.content }),
             });
 
-            if (!response.ok) {
+            if (!response.ok || !response.body) {
                 throw new Error(`HTTP error: ${response.status}`);
             }
 
-            const data = await response.json();
+            setLoading(false); // Stop the "Thinking..." animation once the stream connects
 
-            const assistantMessage: Message = {
-                id: (Date.now() + 1).toString(),
-                sender: "assistant",
-                content: data.answer,
-                sources: data.sources || [],
-            };
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+            let done = false;
 
-            setMessages((prev) => [...prev, assistantMessage]);
-            onSourcesUpdate(data.sources || []);
+            while (!done) {
+                const { value, done: readerDone } = await reader.read();
+                done = readerDone;
+                if (value) {
+                    const chunk = decoder.decode(value, { stream: true });
+                    const lines = chunk.split("\n\n"); // SSE separates events by double newlines
+
+                    for (const line of lines) {
+                        if (line.startsWith("data: ")) {
+                            const dataStr = line.replace("data: ", "");
+
+                            if (dataStr === "[DONE]") {
+                                break;
+                            }
+
+                            try {
+                                const parsed = JSON.parse(dataStr);
+
+                                // If the backend sends the sources first
+                                if (parsed.type === "sources") {
+                                    onSourcesUpdate(parsed.sources || []);
+                                    setMessages((prev) =>
+                                        prev.map((msg) =>
+                                            msg.id === assistantId ? { ...msg, sources: parsed.sources } : msg
+                                        )
+                                    );
+                                }
+                                // If the backend sends a text token
+                                else if (parsed.type === "token") {
+                                    setMessages((prev) =>
+                                        prev.map((msg) =>
+                                            msg.id === assistantId ? { ...msg, content: msg.content + parsed.content } : msg
+                                        )
+                                    );
+                                }
+                            } catch (e) {
+                                console.error("Error parsing stream chunk", e);
+                            }
+                        }
+                    }
+                }
+            }
         } catch (error) {
-            const errorMessage: Message = {
-                id: (Date.now() + 1).toString(),
-                sender: "assistant",
-                content: `Error executing query: ${error instanceof Error ? error.message : "Unknown error"}`,
-            };
-            setMessages((prev) => [...prev, errorMessage]);
-        } finally {
             setLoading(false);
+            setMessages((prev) => [
+                ...prev,
+                {
+                    id: (Date.now() + 2).toString(),
+                    sender: "assistant",
+                    content: `Error executing query: ${error instanceof Error ? error.message : "Unknown error"}`,
+                },
+            ]);
         }
     };
 
@@ -89,8 +137,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onSourcesUpdate }) => {
                         >
                             <div
                                 className={`max-w-3xl px-5 py-4 rounded-xl shadow-sm ${msg.sender === "user"
-                                        ? "bg-blue-600 text-white rounded-br-none"
-                                        : "bg-gray-900 border border-gray-800 text-gray-200 rounded-bl-none"
+                                    ? "bg-blue-600 text-white rounded-br-none"
+                                    : "bg-gray-900 border border-gray-800 text-gray-200 rounded-bl-none"
                                     }`}
                             >
                                 {msg.sender === "user" ? (
