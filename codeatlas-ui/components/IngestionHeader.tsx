@@ -68,6 +68,12 @@ export const IngestionHeader: React.FC<IngestionHeaderProps> = ({ onIngestionCom
                     type="text"
                     value={repoPath}
                     onChange={(e) => setRepoPath(e.target.value)}
+                    onPaste={(e) => {
+                        // Forcefully catch the paste event and update the state
+                        e.preventDefault();
+                        const pastedText = e.clipboardData.getData("text");
+                        setRepoPath(pastedText);
+                    }}
                     placeholder="Enter absolute repo path (e.g., C:/Users/name/projects/my-app)"
                     className="flex-1 bg-gray-950 border border-gray-800 rounded-lg px-4 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500 font-mono"
                 />

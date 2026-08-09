@@ -88,8 +88,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onSourcesUpdate }) => {
                         >
                             <div
                                 className={`max-w-2xl px-4 py-3 rounded-xl text-sm whitespace-pre-wrap leading-relaxed ${msg.sender === "user"
-                                        ? "bg-blue-600 text-white rounded-br-none"
-                                        : "bg-gray-900 border border-gray-800 text-gray-200 rounded-bl-none"
+                                    ? "bg-blue-600 text-white rounded-br-none"
+                                    : "bg-gray-900 border border-gray-800 text-gray-200 rounded-bl-none"
                                     }`}
                             >
                                 {msg.content}
@@ -99,9 +99,9 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onSourcesUpdate }) => {
                 )}
 
                 {loading && (
-                    <div className="flex items-center space-x-2 text-gray-400 text-xs italic">
+                    <div className="flex items-center space-x-2 text-gray-400 text-sm italic">
                         <div className="w-2 h-2 bg-blue-500 rounded-full animate-ping" />
-                        <span>Analyzing AST structures and vector database...</span>
+                        <span>Thinking...</span>
                     </div>
                 )}
             </div>

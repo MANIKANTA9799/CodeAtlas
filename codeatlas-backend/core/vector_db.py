@@ -1,7 +1,7 @@
 from qdrant_client import QdrantClient
 from qdrant_client.models import VectorParams, Distance, PointStruct
 from typing import List, Dict, Any
-
+from core.db_client import get_qdrant_client
 class VectorDatabaseService:
     """
     Manages local Qdrant operations: collection creation, 
@@ -9,7 +9,7 @@ class VectorDatabaseService:
     """
     def __init__(self, collection_name: str = "codeatlas_index", storage_path: str = "./qdrant_storage"):
         # Runs Qdrant locally on disk - no Docker required for development
-        self.client = QdrantClient(path=storage_path)
+        self.client = get_qdrant_client()
         self.collection_name = collection_name
 
     def initialize_collection(self, vector_size: int = 768):

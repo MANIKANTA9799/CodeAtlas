@@ -2,7 +2,7 @@ from typing import List, Dict, Any
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
 from core.embedding import EmbeddingService
-
+from core.db_client import get_qdrant_client
 class RetrievalNode:
     """
     Retrieves vector chunks from Qdrant based on the routing decision 
@@ -15,7 +15,7 @@ class RetrievalNode:
         collection_name: str = "codeatlas_index",
         limit: int = 5
     ):
-        self.client = QdrantClient(path=storage_path)
+        self.client = get_qdrant_client()
         self.collection_name = collection_name
         self.limit = limit
         self.embedder = EmbeddingService()
