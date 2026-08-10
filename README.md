@@ -63,7 +63,7 @@ ollama run llama3.1
 
 ## 🛠️ Getting Started
 
-## Method A: Docker (Recommended)
+## Method A: Docker (Recommended)(Will be added after the next version)
 
 1. Ensure Ollama is running in the background.
 2. From the root directory:
