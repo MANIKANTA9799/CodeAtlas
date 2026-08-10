@@ -1,111 +1,148 @@
-CodeAtlas 🗺️
+# CodeAtlas 🗺️
+
 CodeAtlas is a fully localized, privacy-first AI codebase explorer. It allows you to ingest any local Git repository, chunk its syntax, and chat directly with your code using local Large Language Models (LLMs).
 
-CodeAtlas features a dynamic multi-tenant architecture, allowing you to seamlessly swap between different projects and isolated Qdrant vector buckets on the fly. Because every component runs entirely on your local machine, your code never leaves your laptop.
+CodeAtlas features a dynamic multi-tenant architecture, allowing you to seamlessly swap between different projects and isolated Qdrant vector buckets on the fly. Because every component runs entirely on your local machine, **your code never leaves your laptop**.
 
-🎯 Why CodeAtlas? (Use Cases)
+---
+
+## 🎯 Why CodeAtlas? (Use Cases)
+
 CodeAtlas was built to solve the tension between developer velocity and code privacy. It is an indispensable tool for two critical phases of software development:
 
-🚀 For Startup Founders & Indie Hackers
-When you are bootstrapping a startup, your intellectual property is your most valuable asset. Sending your proprietary algorithms—whether that's a novel computer vision model, a cybersecurity attack path predictor, or high-performance C++ systems—to third-party APIs like OpenAI or Anthropic introduces massive compliance and security risks.
+### 🚀 For Startup Founders & Indie Hackers
 
-Protect Your IP: CodeAtlas gives you the power of AI-assisted development with zero data exfiltration.
+When you are bootstrapping a startup, your intellectual property is your most valuable asset. Sending your proprietary algorithms to third-party APIs introduces massive compliance and security risks.
 
-Context Switching: Founders wear many hats. Use the UI dropdown to instantly swap your AI's context from your frontend React repository to your backend Python services without missing a beat.
+* **Protect Your IP:** CodeAtlas gives you AI-assisted development with zero data exfiltration.
+* **Context Switching:** Instantly swap your AI context between repositories.
+* **Iterate Faster:** Recall how modules were built by querying local Git history.
 
-Iterate Faster: Instantly recall how a specific module was built three months ago by querying your local Git commit history.
+### 🏢 For Enterprise Onboarding & Engineering Teams
 
-🏢 For Enterprise Onboarding & Engineering Teams
-Joining a new company or transitioning to a new team usually means weeks of reading stale documentation and deciphering complex architectures.
+Joining a new company or transitioning to a new team usually means weeks of reading documentation and understanding architectures.
 
-Day-One Productivity: Point CodeAtlas at the company's repository on your first day. Instead of pinging senior engineers to explain how the Java microservices implement Abstract Factory or Builder patterns, just ask CodeAtlas.
+* **Day-One Productivity:** Ask CodeAtlas about complex implementations instead of manually searching thousands of files.
+* **Strict Compliance:** Local LLM and vector database execution keeps code on the machine.
+* **Git History as Documentation:** Understand why decisions were made by querying historical commits.
 
-Strict Compliance: Because the LLM and vector database run locally, companies can safely mandate CodeAtlas for new hires without violating NDAs, SOC2 compliance, or enterprise data policies. The code stays on the corporate-issued laptop.
+---
 
-Git History as Documentation: Understand why a decision was made by asking the smart routing engine to search historical Git commits and author metadata.
+## ✨ Features
 
-✨ Features
-100% Local Processing: Powered by LangGraph and Ollama. No data, prompts, or code snippets are ever transmitted over the internet.
+* **100% Local Processing:** Powered by LangGraph and Ollama.
+* **Smart Routing Engine:** Routes queries to source code, Git history, or both.
+* **Isolated Project Workspaces:** Separate Qdrant vector buckets per repository.
+* **Real-time Context Inspector:** View retrieved files, code blocks, and commits.
+* **Streaming Responses:** Token-by-token markdown streaming with syntax highlighting.
 
-Smart Routing Engine: Intelligently categorizes your query and routes it to search active source code, historical Git commits, or both.
+---
 
-Isolated Project Workspaces: Ingest multiple repositories into physically separate Qdrant vector buckets. Ensure zero cross-contamination of context.
+## 🏗️ Architecture Stack
 
-Real-time Context Inspector: Verify the AI's reasoning. See the exact files, code blocks, and commits the agent is reading in the right-hand inspection panel.
+* **Frontend:** Next.js (React), Tailwind CSS, Server-Sent Events (SSE)
+* **Backend:** FastAPI, Python, LangGraph
+* **AI/LLM:** Ollama (Llama 3.1 default)
+* **Vector Database:** Qdrant (Local persistent storage)
+* **Ingestion:** GitPython, AST Chunking
 
-Streaming Responses: Enjoy lightning-fast, token-by-token streaming with real-time markdown rendering and syntax highlighting.
+---
 
-🏗️ Architecture Stack
-Frontend: Next.js (React), Tailwind CSS, Server-Sent Events (SSE)
+## 🚀 Prerequisites
 
-Backend: FastAPI, Python, LangGraph
+1. **Ollama:** Must be installed and running on your local machine.
+2. Pull the default Llama 3.1 model:
 
-AI/LLM: Ollama (Llama 3.1 default)
-
-Vector Database: Qdrant (Local persistent storage)
-
-Ingestion: GitPython, AST Chunking
-
-🚀 Prerequisites
-Ollama: Must be installed and running on your local machine.
-
-Local Model: Pull the default Llama 3.1 model by running the following command in your terminal:
-
-Bash
+```bash
 ollama run llama3.1
-Docker: Required if you plan to use the containerized setup (Recommended).
+```
 
-🛠️ Getting Started
-Method A: Docker (Recommended)
-The fastest way to get started is by spinning up the entire stack using Docker Compose.
+3. **Docker:** Required for the containerized setup (Recommended).
 
-Ensure Ollama is running in the background on your host machine.
+---
 
-From the root directory of the project, run:
+## 🛠️ Getting Started
 
-Bash
+## Method A: Docker (Recommended)
+
+1. Ensure Ollama is running in the background.
+2. From the root directory:
+
+```bash
 docker-compose up --build
-Open http://localhost:3000 in your browser.
+```
 
-Method B: Manual Setup
-If you prefer to run the services bare-metal, follow these steps:
+3. Open:
 
-1. Start the Backend
+```
+http://localhost:3000
+```
 
-Bash
+---
+
+## Method B: Manual Setup
+
+### 1. Start the Backend
+
+```bash
 cd codeatlas-backend
-# Optional: Create a virtual environment first
+
 pip install -r requirements.txt
+
 uvicorn main:app --reload
-2. Start the Frontend
+```
 
-Bash
+### 2. Start the Frontend
+
+```bash
 cd codeatlas-ui
+
 npm install
+
 npm run dev
-Once both servers are running, navigate to http://localhost:3000.
+```
 
-📖 How to Use
-Ingest a Repository:
+Navigate to:
 
-Look at the top navigation bar.
+```
+http://localhost:3000
+```
 
-Type a custom Bucket Name (e.g., core-backend) to create an isolated workspace.
+---
 
-Paste the absolute path to a local repository on your hard drive (e.g., C:\Users\Dev\core-backend).
+# 📖 How to Use
 
-Click Ingest and wait for the success confirmation.
+## Ingest a Repository
 
-Chat with your Code:
+- Open the top navigation bar.
+- Enter a custom **Bucket Name**.
+- Paste the absolute path to your repository.
+- Click **Ingest**.
 
-Ask a natural language question in the chat panel (e.g., "Explain the routing logic in api.py" or "What were the last 5 commits related to caching?").
+Example:
 
-Watch the Context Inspector on the right populate with the exact vectors the AI retrieved.
+```
+C:\Users\Dev\core-backend
+```
 
-Swap Contexts on the Fly:
+---
 
-Click the Bucket Name input in the top navigation bar.
+## Chat with your Code
 
-A dropdown will appear listing all your previously ingested projects.
+Ask questions like:
 
-Select a different project to instantly redirect the AI's search focus—no re-ingestion required.
+> Explain the routing logic in api.py
+
+or:
+
+> What were the last 5 commits related to caching?
+
+The Context Inspector will display the exact vectors retrieved by the AI.
+
+---
+
+## Swap Contexts on the Fly
+
+- Click the **Bucket Name** input.
+- Select an existing project.
+- CodeAtlas switches AI search context instantly without re-ingestion.
