@@ -1,32 +1,39 @@
 "use client";
-
 import React, { useState } from "react";
-import { IngestionHeader } from "@/components/IngestionHeader";
-import { ChatPanel } from "@/components/ChatPanel";
-import { ContextPanel, SourceItem } from "@/components/ContextPanel";
+import { IngestionHeader } from "../components/IngestionHeader";
+import { ChatPanel } from "../components/ChatPanel";
+// Import ContextPanel AND the SourceItem interface from it!
+import { ContextPanel, SourceItem } from "../components/ContextPanel";
 
 export default function Home() {
+  const [activeProject, setActiveProject] = useState<string>("default_project");
   const [activeSources, setActiveSources] = useState<SourceItem[]>([]);
-  // We track the current repo path in case we want to display it in the UI later
-  const [currentRepo, setCurrentRepo] = useState<string | null>(null);
 
   return (
-    <main className="flex flex-col h-screen w-screen overflow-hidden bg-gray-950">
-      {/* Top Bar: Repository Ingestion Controls */}
-      <IngestionHeader onIngestionComplete={(path) => setCurrentRepo(path)} />
+    <div className="flex flex-col h-screen bg-gray-950 overflow-hidden">
 
-      {/* Main Workspace: 2-Lane Layout */}
+      {/* TOP NAVBAR: Handles Ingestion and dynamically sets the active project */}
+      <IngestionHeader
+        onProjectChange={(projectName) => setActiveProject(projectName)}
+      />
+
+      {/* MAIN WORKSPACE: Split between Chat and Context */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left Lane: Chat Interface (60%) */}
-        <div className="w-3/5 h-full relative">
-          <ChatPanel onSourcesUpdate={(sources) => setActiveSources(sources)} />
+
+        {/* LEFT SIDE: Chat Interface */}
+        <div className="flex-1 flex flex-col min-w-0 border-r border-gray-800">
+          <ChatPanel
+            projectName={activeProject}
+            onSourcesUpdate={(sources) => setActiveSources(sources)}
+          />
         </div>
 
-        {/* Right Lane: Context Inspector (40%) */}
-        <div className="w-2/5 h-full relative">
+        {/* RIGHT SIDE: Context Inspector */}
+        <div className="w-1/3 flex flex-col min-w-0 bg-gray-900">
           <ContextPanel sources={activeSources} />
         </div>
+
       </div>
-    </main>
+    </div>
   );
 }

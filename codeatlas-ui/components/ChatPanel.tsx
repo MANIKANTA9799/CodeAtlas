@@ -10,10 +10,11 @@ export interface Message {
 }
 
 interface ChatPanelProps {
-    onSourcesUpdate: (sources: SourceItem[]) => void;
+    onSourcesUpdate: (sources: any[]) => void;
+    projectName: string;
 }
 
-export const ChatPanel: React.FC<ChatPanelProps> = ({ onSourcesUpdate }) => {
+export const ChatPanel: React.FC<ChatPanelProps> = ({ onSourcesUpdate, projectName }) => {
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
@@ -41,11 +42,13 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onSourcesUpdate }) => {
         setLoading(true);
 
         try {
-            // Notice we are hitting a new /stream endpoint
             const response = await fetch("http://127.0.0.1:8000/api/v1/chat/stream", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ query: userMessage.content }),
+                body: JSON.stringify({
+                    query: userMessage.content,
+                    project_name: projectName // <-- Ensures we search the active bucket!
+                }),
             });
 
             if (!response.ok || !response.body) {
@@ -115,12 +118,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ onSourcesUpdate }) => {
 
     return (
         <div className="flex flex-col h-full bg-gray-950 text-gray-100">
-            <div className="p-4 border-b border-gray-800 flex items-center justify-between">
-                <h1 className="text-lg font-bold text-gray-100">CodeAtlas Workspace</h1>
-                <span className="text-xs text-green-400 bg-green-950 border border-green-800 px-2.5 py-1 rounded-full">
-                    Agent Online
-                </span>
-            </div>
+            {/* The duplicate "CodeAtlas Workspace" header div has been completely removed from here */}
 
             <div className="flex-1 p-4 overflow-y-auto space-y-4">
                 {messages.length === 0 ? (

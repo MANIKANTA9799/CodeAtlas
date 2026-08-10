@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 
 interface IngestionHeaderProps {
-    onIngestionComplete: (path: string) => void;
+    onIngestSuccess?: () => void;
+    onProjectChange?: (projectName: string) => void;
 }
 
-export const IngestionHeader: React.FC<IngestionHeaderProps> = ({ onIngestionComplete }) => {
+export const IngestionHeader: React.FC<IngestionHeaderProps> = ({ onIngestSuccess, onProjectChange }) => {
     const [repoPath, setRepoPath] = useState("");
-    const [status, setStatus] = useState<"idle" | "code" | "git" | "success" | "error">("idle");
+    const [customProjectName, setCustomProjectName] = useState("");
+    const [status, setStatus] = useState<"idle" | "code" | "git" | "complete" | "error">("idle");
     const [errorMessage, setErrorMessage] = useState("");
     const [elapsedTime, setElapsedTime] = useState<number | null>(null);
 
@@ -18,91 +20,102 @@ export const IngestionHeader: React.FC<IngestionHeaderProps> = ({ onIngestionCom
         setElapsedTime(null);
         const startTime = Date.now();
 
+        // 1. Determine Project Name (Use explicit input, otherwise fallback to folder name)
+        let finalProjectName = customProjectName.trim();
+        if (!finalProjectName) {
+            const normalizedPath = repoPath.replace(/\\/g, "/").replace(/\/$/, "");
+            finalProjectName = normalizedPath.split("/").pop() || "default_project";
+            setCustomProjectName(finalProjectName); // Fill the UI with the extracted name
+        }
+
+        // Lift state to main page
+        if (onProjectChange) {
+            onProjectChange(finalProjectName);
+        }
+
         try {
-            // 1. Trigger Code AST Ingestion
             const codeRes = await fetch("http://127.0.0.1:8000/api/v1/ingest/", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ repo_path: repoPath.trim() }),
+                body: JSON.stringify({
+                    repo_path: repoPath.trim(),
+                    project_name: finalProjectName,
+                }),
             });
 
-            if (!codeRes.ok) {
-                const errorData = await codeRes.json();
-                throw new Error(errorData.detail || "Code ingestion failed");
-            }
+            if (!codeRes.ok) throw new Error("Code ingestion failed");
 
-            // 2. Trigger Git History Ingestion
             setStatus("git");
             const gitRes = await fetch("http://127.0.0.1:8000/api/v1/ingest/git", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ repo_path: repoPath.trim() }),
+                body: JSON.stringify({
+                    repo_path: repoPath.trim(),
+                    project_name: finalProjectName,
+                }),
             });
 
-            if (!gitRes.ok) {
-                const errorData = await gitRes.json();
-                throw new Error(errorData.detail || "Git history ingestion failed");
-            }
+            if (!gitRes.ok) throw new Error("Git ingestion failed");
 
-            const totalSeconds = ((Date.now() - startTime) / 1000).toFixed(1);
-            setElapsedTime(Number(totalSeconds));
-            setStatus("success");
-            onIngestionComplete(repoPath.trim());
-        } catch (err) {
+            setStatus("complete");
+            setElapsedTime(Math.round((Date.now() - startTime) / 1000));
+            if (onIngestSuccess) onIngestSuccess();
+        } catch (err: any) {
             setStatus("error");
-            setErrorMessage(err instanceof Error ? err.message : "Ingestion failed");
+            setErrorMessage(err.message || "An unknown error occurred");
         }
     };
 
     return (
-        <header className="w-full bg-gray-900 border-b border-gray-800 px-6 py-3 flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-                <span className="font-bold text-gray-100 text-lg tracking-wide">CodeAtlas</span>
-                <span className="text-xs bg-blue-950 text-blue-400 border border-blue-800 px-2 py-0.5 rounded">
-                    Local Engine
+        <div className="flex items-center justify-between p-4 bg-gray-950 border-b border-gray-800 shadow-sm">
+            {/* LEFT: Branding & Agent Status */}
+            <div className="flex items-center space-x-4">
+                <h1 className="text-xl font-bold text-gray-100 tracking-wide">CodeAtlas</h1>
+                <span className="text-xs text-green-400 bg-green-950 border border-green-800 px-2.5 py-1 rounded-full flex items-center space-x-1.5">
+                    <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
+                    <span>Agent Online</span>
                 </span>
             </div>
 
-            <div className="flex items-center space-x-3 flex-1 max-w-2xl mx-8">
+            {/* RIGHT: Explicit Inputs & Controls */}
+            <div className="flex items-center space-x-3">
+                {status === "complete" && (
+                    <span className="text-green-400 font-mono text-xs px-2">✓ {elapsedTime}s</span>
+                )}
+                {status === "error" && (
+                    <span className="text-red-400 font-mono text-xs px-2 truncate max-w-[200px]" title={errorMessage}>
+                        Error: {errorMessage}
+                    </span>
+                )}
+
+                {/* The New Project Name Input */}
+                <input
+                    type="text"
+                    value={customProjectName}
+                    onChange={(e) => {
+                        setCustomProjectName(e.target.value);
+                        if (onProjectChange) onProjectChange(e.target.value); // Keep ChatPanel in sync while typing!
+                    }}
+                    placeholder="Bucket Name"
+                    className="w-36 bg-gray-900 border border-gray-800 rounded-md px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-blue-500 font-mono transition-colors"
+                />
+
                 <input
                     type="text"
                     value={repoPath}
                     onChange={(e) => setRepoPath(e.target.value)}
-                    onPaste={(e) => {
-                        // Forcefully catch the paste event and update the state
-                        e.preventDefault();
-                        const pastedText = e.clipboardData.getData("text");
-                        setRepoPath(pastedText);
-                    }}
-                    placeholder="Enter absolute repo path (e.g., C:/Users/name/projects/my-app)"
-                    className="flex-1 bg-gray-950 border border-gray-800 rounded-lg px-4 py-1.5 text-sm text-gray-200 focus:outline-none focus:border-blue-500 font-mono"
+                    placeholder="C:\Path\To\Repository"
+                    className="w-64 bg-gray-900 border border-gray-800 rounded-md px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-blue-500 font-mono transition-colors"
                 />
+
                 <button
                     onClick={handleIngest}
                     disabled={status === "code" || status === "git"}
-                    className="bg-blue-600 hover:bg-blue-500 disabled:bg-gray-800 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors whitespace-nowrap"
+                    className="bg-blue-600 hover:bg-blue-500 disabled:bg-gray-800 text-white text-sm font-semibold px-5 py-2 rounded-md transition-all whitespace-nowrap"
                 >
-                    {status === "code" && "Indexing AST..."}
-                    {status === "git" && "Indexing Git..."}
-                    {status !== "code" && status !== "git" && "Ingest Project"}
+                    {status === "code" ? "Indexing..." : status === "git" ? "Scanning Git..." : "Ingest"}
                 </button>
             </div>
-
-            <div className="flex items-center text-xs">
-                {status === "idle" && (
-                    <span className="text-gray-500">No project ingested</span>
-                )}
-                {status === "success" && (
-                    <span className="text-green-400 font-medium">
-                        Indexed in {elapsedTime}s
-                    </span>
-                )}
-                {status === "error" && (
-                    <span className="text-red-400 font-medium truncate max-w-xs" title={errorMessage}>
-                        Error: {errorMessage}
-                    </span>
-                )}
-            </div>
-        </header>
+        </div>
     );
 };

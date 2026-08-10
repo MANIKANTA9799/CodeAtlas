@@ -11,17 +11,17 @@ router = APIRouter(prefix="/api/v1/chat", tags=["Chat"])
 
 class ChatRequest(BaseModel):
     query: str
+    project_name: str = "default_project"  # <-- Added dynamic namespace
 
 class ChatResponse(BaseModel):
     answer: str
     sources: List[Dict[str, Any]]
 
 # Initialize the LLM client pointing to local Ollama
-# Added streaming=True to allow token-by-token generation
 llm_client = ChatOllama(
     model="llama3.1", 
     temperature=0.0,
-    base_url="http://localhost:11434",
+    base_url="http://localhost:11434"
 )
 
 # Compile the LangGraph application
@@ -37,6 +37,7 @@ def query_agent(request: ChatRequest):
     try:
         initial_state = {
             "query": request.query,
+            "project_name": request.project_name, # <-- Passed to state
             "messages": [],
             "route": "",
             "retrieved_context": "",
@@ -64,6 +65,7 @@ async def stream_agent(request: ChatRequest):
     async def generate():
         initial_state = {
             "query": request.query,
+            "project_name": request.project_name, # <-- Passed to state
             "messages": [],
             "route": "",
             "retrieved_context": "",
@@ -74,7 +76,7 @@ async def stream_agent(request: ChatRequest):
         
         try:
             # astream_events listens to everything happening inside the graph pipeline
-            async for event in codeatlas_agent.astream_events(initial_state, version="v2"):# type: ignore
+            async for event in codeatlas_agent.astream_events(initial_state, version="v2"): # type: ignore
                 
                 # 1. Intercept state updates to grab and send the retrieved sources first
                 if event["event"] == "on_chain_end":

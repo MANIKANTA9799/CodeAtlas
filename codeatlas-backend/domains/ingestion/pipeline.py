@@ -6,13 +6,14 @@ from domains.ingestion.service import RepositoryScanner
 from domains.parsing.registry import LanguageRegistry
 from domains.parsing.ir import PythonAdapter, LanguageAdapter
 from domains.parsing.chunker import ASTChunker
-
+from qdrant_client.models import VectorParams, Distance
 from core.embedding import EmbeddingService
 from core.vector_db import VectorDatabaseService
 
 class IngestionPipeline:
-    def __init__(self, repo_path: str):
+    def __init__(self, repo_path: str, project_name: str):
         self.repo_path = repo_path
+        self.project_name = project_name # <-- NEW
         
         # Initialize our domain services
         self.scanner = RepositoryScanner(repo_path)
@@ -21,18 +22,19 @@ class IngestionPipeline:
         
         # Initialize our core infrastructure services
         self.embedder = EmbeddingService()
-        self.vector_db = VectorDatabaseService()
         
-        # Ensure the vector database is ready
-        self.vector_db.initialize_collection()
+        # IMPORTANT: We pass the dynamic project name to the vector database!
+        self.vector_db = VectorDatabaseService(collection_name=self.project_name)
         
-        # MVP: A simple adapter mapping. As we add more languages, 
-        # this belongs in its own AdapterRegistry.
+        # Recreate the collection to clear out old duplicates if re-ingesting
+        self.vector_db.client.recreate_collection(
+            collection_name=self.project_name,
+            vectors_config=VectorParams(size=768, distance=Distance.COSINE) 
+        )
+        
         self.adapters: Dict[str, LanguageAdapter] = {
             ".py": PythonAdapter(),
-            # ".js": JavaScriptAdapter() # To be implemented later
         }
-
     def _process_batch(self, batch_chunks: List[Dict[str, Any]]):
         """Embeds and uploads a batch of code chunks to Qdrant."""
         if not batch_chunks:

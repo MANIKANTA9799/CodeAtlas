@@ -22,10 +22,12 @@ class RouterNode:
     SYSTEM_PROMPT = """You are an expert query router for a codebase intelligence platform.
 Your sole job is to analyze the user's input and classify its intent into exactly one of four routes:
 
-1. 'code': The query asks about current code implementation, architecture, class definitions, function parameters, syntax, or current system design.
+1. 'code': The query asks about logic, architecture, how a feature works, class definitions, function parameters, or current system design. If the user asks "How does X work?" or "Explain Y logic", assume they mean within THIS codebase and choose 'code'.
 2. 'git': The query asks about historical changes, commit messages, author contributions, past refactors, or why a change was made in the past.
 3. 'both': The query asks for a comparison between past changes and current code, or requires both historical context and current implementation.
-4. 'general': The query is a greeting, general knowledge question, or meta question that does not require searching the codebase or Git history.
+4. 'general': STRICTLY for greetings ("hello", "hi"), small talk, or extremely broad programming questions completely unrelated to any specific codebase (e.g., "What is Python?"). DO NOT use this for questions about logic, routing, or architecture.
+
+CRITICAL RULE: When in doubt about a technical question, ALWAYS default to 'code'.
 
 You MUST respond strictly with valid JSON conforming to this schema:
 {

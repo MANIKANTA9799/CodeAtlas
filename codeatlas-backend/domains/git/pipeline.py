@@ -7,14 +7,15 @@ from core.embedding import EmbeddingService
 from core.vector_db import VectorDatabaseService
 
 class GitIngestionPipeline:
-    def __init__(self, repo_path: str):
+    def __init__(self, repo_path: str, project_name: str): # <-- Add project_name here
         self.repo_path = repo_path
-        self.scanner = GitHistoryScanner(repo_path=repo_path)
+        self.project_name = project_name
+        self.scanner = GitHistoryScanner(repo_path)
+        self.formatter = GitSemanticFormatter()
         self.embedder = EmbeddingService()
-        self.vector_db = VectorDatabaseService()
         
-        # Ensure collection exists before inserting
-        self.vector_db.initialize_collection()
+        # Initialize vector DB with the dynamic project collection!
+        self.vector_db = VectorDatabaseService(collection_name=self.project_name)
 
     def _process_batch(self, batch_commits: List[Dict[str, Any]]):
         """Embeds and uploads a batch of file-level commit changes to Qdrant."""

@@ -1,7 +1,7 @@
 import React from "react";
 import { MarkdownBlock } from "./MarkdownBlock";
 export interface SourceItem {
-    type: "code" | "commit";
+    type: "code" | "commit"; // <-- Change this from 'string'
     file_path?: string;
     symbol?: string;
     hash?: string;

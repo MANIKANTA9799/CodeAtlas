@@ -3,24 +3,19 @@ from qdrant_client import QdrantClient
 from qdrant_client.http import models
 from core.embedding import EmbeddingService
 from core.db_client import get_qdrant_client
+
 class RetrievalNode:
     """
     Retrieves vector chunks from Qdrant based on the routing decision 
     and formats them for the synthesis prompt.
     """
 
-    def __init__(
-        self, 
-        storage_path: str = "./qdrant_storage", 
-        collection_name: str = "codeatlas_index",
-        limit: int = 5
-    ):
+    def __init__(self, limit: int = 5):
         self.client = get_qdrant_client()
-        self.collection_name = collection_name
         self.limit = limit
         self.embedder = EmbeddingService()
 
-    def _query_by_document_type(self, query_vector: List[float], doc_type: str) -> List[Any]:
+    def _query_by_document_type(self, query_vector: List[float], doc_type: str, collection_name: str) -> List[Any]:
         """Executes a filtered vector search in Qdrant using the modern API."""
         filter_condition = models.Filter(
             must=[
@@ -31,18 +26,20 @@ class RetrievalNode:
             ]
         )
         
-        # Qdrant client query execution using the modern query_points API
-        results = self.client.query_points(
-            collection_name=self.collection_name,
-            query=query_vector,
-            query_filter=filter_condition,
-            limit=self.limit
-        )
-        
-        # query_points returns a response object; we extract the points list
-        return results.points
+        # Qdrant client query execution targeting the dynamic collection
+        try:
+            results = self.client.query_points(
+                collection_name=collection_name,
+                query=query_vector,
+                query_filter=filter_condition,
+                limit=self.limit
+            )
+            return results.points
+        except Exception as e:
+            print(f"Warning: Could not query collection '{collection_name}'. Error: {e}")
+            return []
 
-    def retrieve(self, query: str, route: str) -> Dict[str, Any]:
+    def retrieve(self, query: str, route: str, project_name: str) -> Dict[str, Any]:
         """
         Executes vector search depending on the route and returns formatted context and sources.
         """
@@ -54,10 +51,10 @@ class RetrievalNode:
 
         if route in ["code", "git"]:
             doc_type = "source_code" if route == "code" else "commit"
-            points = self._query_by_document_type(query_vector, doc_type)
+            points = self._query_by_document_type(query_vector, doc_type, project_name)
         elif route == "both":
-            code_points = self._query_by_document_type(query_vector, "source_code")
-            git_points = self._query_by_document_type(query_vector, "commit")
+            code_points = self._query_by_document_type(query_vector, "source_code", project_name)
+            git_points = self._query_by_document_type(query_vector, "commit", project_name)
             points = code_points + git_points
 
         formatted_context_blocks = []

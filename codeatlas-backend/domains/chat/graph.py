@@ -24,7 +24,10 @@ def build_codeatlas_graph(llm_client):
     def run_retrieval(state: AgentState) -> dict:
         query = state["query"]
         route = state["route"]
-        result = retrieval_node.retrieve(query=query, route=route)
+        project_name = state.get("project_name", "default_project") # <-- NEW
+        
+        # Pass project_name to the retrieval node
+        result = retrieval_node.retrieve(query=query, route=route, project_name=project_name) 
         return {
             "retrieved_context": result["context"],
             "sources": result["sources"]

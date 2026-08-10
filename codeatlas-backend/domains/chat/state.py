@@ -14,6 +14,9 @@ class AgentState(TypedDict):
     # The current isolated question being asked
     query: str
     
+    # The active project collection to search in Qdrant
+    project_name: str
+    
     # The decision made by the Router Node ("code", "git", "both", or "general")
     route: str
     
