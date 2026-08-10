@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 interface IngestionHeaderProps {
     onIngestSuccess?: () => void;
@@ -8,9 +8,24 @@ interface IngestionHeaderProps {
 export const IngestionHeader: React.FC<IngestionHeaderProps> = ({ onIngestSuccess, onProjectChange }) => {
     const [repoPath, setRepoPath] = useState("");
     const [customProjectName, setCustomProjectName] = useState("");
+
+    // NEW STATE: For the dropdown suggestions
+    const [availableProjects, setAvailableProjects] = useState<string[]>([]);
+    const [showDropdown, setShowDropdown] = useState(false);
+
     const [status, setStatus] = useState<"idle" | "code" | "git" | "complete" | "error">("idle");
     const [errorMessage, setErrorMessage] = useState("");
     const [elapsedTime, setElapsedTime] = useState<number | null>(null);
+
+    // NEW: Fetch existing collections when the header loads
+    useEffect(() => {
+        fetch("http://127.0.0.1:8000/api/v1/ingest/collections")
+            .then(res => res.json())
+            .then(data => {
+                if (data.collections) setAvailableProjects(data.collections);
+            })
+            .catch(err => console.error("Failed to fetch collections", err));
+    }, []);
 
     const handleIngest = async () => {
         if (!repoPath.trim()) return;
@@ -20,18 +35,14 @@ export const IngestionHeader: React.FC<IngestionHeaderProps> = ({ onIngestSucces
         setElapsedTime(null);
         const startTime = Date.now();
 
-        // 1. Determine Project Name (Use explicit input, otherwise fallback to folder name)
         let finalProjectName = customProjectName.trim();
         if (!finalProjectName) {
             const normalizedPath = repoPath.replace(/\\/g, "/").replace(/\/$/, "");
             finalProjectName = normalizedPath.split("/").pop() || "default_project";
-            setCustomProjectName(finalProjectName); // Fill the UI with the extracted name
+            setCustomProjectName(finalProjectName);
         }
 
-        // Lift state to main page
-        if (onProjectChange) {
-            onProjectChange(finalProjectName);
-        }
+        if (onProjectChange) onProjectChange(finalProjectName);
 
         try {
             const codeRes = await fetch("http://127.0.0.1:8000/api/v1/ingest/", {
@@ -59,6 +70,12 @@ export const IngestionHeader: React.FC<IngestionHeaderProps> = ({ onIngestSucces
 
             setStatus("complete");
             setElapsedTime(Math.round((Date.now() - startTime) / 1000));
+
+            // Add the newly ingested project to the dropdown list so it appears immediately!
+            if (!availableProjects.includes(finalProjectName)) {
+                setAvailableProjects(prev => [...prev, finalProjectName]);
+            }
+
             if (onIngestSuccess) onIngestSuccess();
         } catch (err: any) {
             setStatus("error");
@@ -67,7 +84,7 @@ export const IngestionHeader: React.FC<IngestionHeaderProps> = ({ onIngestSucces
     };
 
     return (
-        <div className="flex items-center justify-between p-4 bg-gray-950 border-b border-gray-800 shadow-sm">
+        <div className="flex items-center justify-between p-4 bg-gray-950 border-b border-gray-800 shadow-sm relative z-50">
             {/* LEFT: Branding & Agent Status */}
             <div className="flex items-center space-x-4">
                 <h1 className="text-xl font-bold text-gray-100 tracking-wide">CodeAtlas</h1>
@@ -88,17 +105,46 @@ export const IngestionHeader: React.FC<IngestionHeaderProps> = ({ onIngestSucces
                     </span>
                 )}
 
-                {/* The New Project Name Input */}
-                <input
-                    type="text"
-                    value={customProjectName}
-                    onChange={(e) => {
-                        setCustomProjectName(e.target.value);
-                        if (onProjectChange) onProjectChange(e.target.value); // Keep ChatPanel in sync while typing!
-                    }}
-                    placeholder="Bucket Name"
-                    className="w-36 bg-gray-900 border border-gray-800 rounded-md px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-blue-500 font-mono transition-colors"
-                />
+                {/* --- THE NEW SEARCH BAR WITH DROPDOWN --- */}
+                <div className="relative">
+                    <input
+                        type="text"
+                        value={customProjectName}
+                        onChange={(e) => {
+                            setCustomProjectName(e.target.value);
+                            setShowDropdown(true);
+                            if (onProjectChange) onProjectChange(e.target.value);
+                        }}
+                        onFocus={() => setShowDropdown(true)}
+                        // Delay closing so the user's click registers before the menu disappears
+                        onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+                        placeholder="Bucket Name"
+                        className="w-40 bg-gray-900 border border-gray-800 rounded-md px-3 py-2 text-sm text-gray-200 focus:outline-none focus:border-blue-500 font-mono transition-colors"
+                    />
+
+                    {/* Autocomplete Suggestions Menu */}
+                    {showDropdown && availableProjects.length > 0 && (
+                        <div className="absolute top-full left-0 mt-1 w-full bg-gray-900 border border-gray-700 rounded-md shadow-xl overflow-hidden z-50">
+                            {availableProjects
+                                .filter(p => p.toLowerCase().includes(customProjectName.toLowerCase()))
+                                .slice(0, 5) // Keep it clean: Top 5 only
+                                .map(project => (
+                                    <div
+                                        key={project}
+                                        onClick={() => {
+                                            setCustomProjectName(project);
+                                            if (onProjectChange) onProjectChange(project);
+                                            setShowDropdown(false);
+                                        }}
+                                        className="px-3 py-2 text-sm text-gray-300 hover:bg-blue-600 hover:text-white cursor-pointer font-mono truncate transition-colors"
+                                    >
+                                        {project}
+                                    </div>
+                                ))}
+                        </div>
+                    )}
+                </div>
+                {/* ---------------------------------------- */}
 
                 <input
                     type="text"

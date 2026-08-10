@@ -4,7 +4,7 @@ from pathlib import Path
 import time
 from domains.git.pipeline import GitIngestionPipeline
 from .pipeline import IngestionPipeline
-
+from qdrant_client import QdrantClient
 router = APIRouter(prefix="/api/v1/ingest", tags=["Ingestion"])
 
 class IngestRequest(BaseModel):
@@ -70,3 +70,15 @@ def ingest_git_history(request: IngestRequest):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Git ingestion failed: {str(e)}")
+
+@router.get("/collections")
+def list_collections():
+    """Read-only endpoint to get existing project names for the UI dropdown."""
+    try:
+        # Connect to your local storage folder
+        client = QdrantClient(path="./qdrant_storage")
+        collections = client.get_collections()
+        # Return all bucket names as a simple list
+        return {"collections": [c.name for c in collections.collections]}
+    except Exception as e:
+        return {"collections": []}
